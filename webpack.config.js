@@ -6,17 +6,19 @@ module.exports = {
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
-        publicPath: '/polygonTest/',
+        // publicPath: '/polygonTest/',
+        publicPath: '/',
         clean: true
     },
     devServer: {
-        static: {
-            directory: path.join(__dirname, 'dist'),
-        },
+        // static: {
+        //     directory: path.join(__dirname, 'dist'),
+        // },
         port: 8080,
     }
     ,
-    mode: 'production',
+    //поменяй на 'production' для продакшн сборки
+    mode: 'development',
     module: {
         rules: [
             {

@@ -2,10 +2,12 @@ body {
   font-family: Arial, sans-serif;
   margin: 20px;
   padding: 0;
-  background-color: #f5f5f5;
+  background-color: #232323;
+  color: #f5f5f5;
 }
 
 .container {
+  background: none;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -60,6 +62,8 @@ body {
 
 .zone {
   width: 100%;
+  background: #2d2d2d;
+  border-color: #444;
   border: 2px solid #ddd;
   border-radius: 8px;
   background: white;
@@ -69,7 +73,8 @@ body {
 
 
 .zone-header {
-  background-color: #f8f9fa;
+  background-color: #232323;
+  color: #f5f5f5;
   padding: 10px;
   font-weight: bold;
   border-bottom: 1px solid #ddd;
@@ -83,11 +88,11 @@ body {
 
 
 .buffer-zone .zone-header {
-  background-color: #e3f2fd;
+  background-color: #232323;
 }
 
 .work-zone .zone-header {
-  background-color: #e8f5e8;
+  background-color: #232323;
 }
 
 .buffer, .work {
@@ -103,6 +108,7 @@ svg {
   height: 100%;
   min-height: 300px;
   cursor: grab;
+  background: #232323;
 }
 
 svg:active {
@@ -149,7 +155,7 @@ svg:active {
   cursor: grabbing;
 }
 
-/* Стили для шкал измерений */
+
 .scale-x, .scale-y {
   pointer-events: none;
 }

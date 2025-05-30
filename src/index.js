@@ -40,29 +40,38 @@ function generateRandomPolygons() {
 
 // Обработчики событий
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('createBtn').addEventListener('click', () => {
+    document.getElementById('createBtn').onclick = () => {
         const polygons = generateRandomPolygons();
         document.querySelector('buffer-zone').renderPolygons(polygons);
-    });
+    };
 
-    document.getElementById('saveBtn').addEventListener('click', () => {
+    document.getElementById('saveBtn').onclick = () => {
         try {
-            const data = document.querySelector('buffer-zone').getPolygonsData();
-            safeStorage.setItem('polygons', JSON.stringify(data));
-            alert('Полигоны сохранены успешно!');
+            const bufferZone = document.querySelector('buffer-zone');
+            const workZone = document.querySelector('work-zone');
+
+            const bufferData = bufferZone.getPolygonsData();
+            safeStorage.setItem('polygons', JSON.stringify(bufferData));
+
+            workZone.saveWorkZonePolygons();
+
+            alert('Состояние сохранено успешно!');
         } catch (e) {
             alert('Ошибка при сохранении');
         }
-    });
+    };
 
-    document.getElementById('resetBtn').addEventListener('click', () => {
+    document.getElementById('resetBtn').onclick = () => {
         if (confirm('Вы уверены, что хотите сбросить все сохраненные данные?')) {
             safeStorage.removeItem('polygons');
             safeStorage.removeItem('workZonePolygons');
+            safeStorage.removeItem('workZoneScale');
+            safeStorage.removeItem('workZonePanX');
+            safeStorage.removeItem('workZonePanY');
+
             document.querySelector('buffer-zone').renderPolygons([]);
             document.querySelector('work-zone').clearPolygons();
             alert('Данные сброшены!');
         }
-    });
-
+    };
 });

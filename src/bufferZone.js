@@ -18,6 +18,7 @@ class BufferZone extends HTMLElement {
         super();
         this.polygons = [];
         this.selectedPolygon = null;
+        this.eventHandlers = new Map(); // Для отслеживания обработчиков событий
         this.innerHTML = `
       <div class="zone-header">Буферная зона</div>
       <div class="zone-content">
@@ -45,10 +46,39 @@ class BufferZone extends HTMLElement {
             const source = e.dataTransfer.getData('source');
 
             if (source === 'work') {
-                this.addPolygon(points);
+                // Получаем координаты курсора в SVG буферной зоны
+                const svgPoint = this.getScaledCoordinates(e, svg);
+
+                // Вычисляем центр полигона
+                const originalPoints = points.split(' ').map(p => p.split(',').map(Number));
+                const centroid = originalPoints.reduce(
+                    (acc, [x, y]) => [acc[0] + x, acc[1] + y],
+                    [0, 0]
+                ).map(sum => sum / originalPoints.length);
+
+                // Смещаем полигон так, чтобы его центр был в точке курсора
+                const shiftX = svgPoint.x - centroid[0];
+                const shiftY = svgPoint.y - centroid[1];
+
+                const shiftedPoints = originalPoints.map(([x, y]) => [
+                    x + shiftX,
+                    y + shiftY
+                ]);
+
+                const newPointsStr = shiftedPoints.map(p => p.join(',')).join(' ');
+                this.addPolygon(newPointsStr);
                 document.querySelector('work-zone').removePolygon(points);
             }
         });
+    }
+
+    disconnectedCallback() {
+        // Очищаем все обработчики событий
+        this.eventHandlers.forEach(handlers => {
+            document.removeEventListener('mousemove', handlers.mousemove);
+            document.removeEventListener('mouseup', handlers.mouseup);
+        });
+        this.eventHandlers.clear();
     }
 
     addPolygon(points) {
@@ -67,8 +97,8 @@ class BufferZone extends HTMLElement {
 
         const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         polygon.setAttribute('points', points);
-        polygon.setAttribute('fill', `hsl(${200 + index * 30}, 70%, 80%)`);
-        polygon.setAttribute('stroke', '#1976D2');
+        polygon.setAttribute('fill', '#ff0000'); 
+        polygon.setAttribute('stroke', '#ff0000');
         polygon.setAttribute('stroke-width', '2');
         polygon.classList.add('polygon');
         polygon.dataset.points = points;
@@ -89,28 +119,53 @@ class BufferZone extends HTMLElement {
         });
     }
 
+    // Преобразование координат мыши в координаты SVG
+    getScaledCoordinates(e, svg) {
+        const rect = svg.getBoundingClientRect();
+        const viewBox = svg.viewBox.baseVal;
+
+        const scaleX = viewBox.width / rect.width;
+        const scaleY = viewBox.height / rect.height;
+
+        const x = (e.clientX - rect.left) * scaleX + viewBox.x;
+        const y = (e.clientY - rect.top) * scaleY + viewBox.y;
+
+        return { x, y };
+    }
+
     setupPolygonHandlers(g, points) {
         let isDragging = false;
-        let startX, startY;
+        let lastX, lastY;
         let originalPoints = points.split(' ').map(p => p.split(',').map(Number));
         let currentPoints = [...originalPoints];
 
-        g.addEventListener('mousedown', e => {
+        const svg = this.querySelector('svg');
+
+        const mouseDownHandler = (e) => {
             isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
+            const coords = this.getScaledCoordinates(e, svg);
+            lastX = coords.x;
+            lastY = coords.y;
             g.style.opacity = '0.7';
             this.selectedPolygon = points;
             e.preventDefault();
             e.stopPropagation();
-        });
+        };
 
         const handleMouseMove = (e) => {
             if (isDragging && this.selectedPolygon === points) {
-                const deltaX = (e.clientX - startX);
-                const deltaY = (e.clientY - startY);
+                const coords = this.getScaledCoordinates(e, svg);
 
-                currentPoints = originalPoints.map(([x, y]) => [
+                // Считаем дельту в координатах SVG
+                const deltaX = coords.x - lastX;
+                const deltaY = coords.y - lastY;
+
+                // Обновляем последние координаты
+                lastX = coords.x;
+                lastY = coords.y;
+
+                // Обновляем текущие точки
+                currentPoints = currentPoints.map(([x, y]) => [
                     x + deltaX,
                     y + deltaY
                 ]);
@@ -118,7 +173,7 @@ class BufferZone extends HTMLElement {
                 const newPointsStr = currentPoints.map(p => p.join(',')).join(' ');
                 g.querySelector('polygon').setAttribute('points', newPointsStr);
 
-                // Подсвечиваем рабочую зону при наведении
+                // Подсвечиваем рабочую зону при наведении (используем экранные координаты)
                 const workZone = document.querySelector('work-zone');
                 const workRect = workZone.getBoundingClientRect();
 
@@ -142,16 +197,32 @@ class BufferZone extends HTMLElement {
                 if (e.clientX >= workRect.left && e.clientX <= workRect.right &&
                     e.clientY >= workRect.top && e.clientY <= workRect.bottom) {
 
-                    // Считаем смещение до точки (150, 150)
-                    const centroid = originalPoints.reduce(
+                    // Получаем координаты курсора в рабочей зоне с учетом масштаба и панорамирования
+                    const workSvg = workZone.querySelector('svg');
+                    const workRect = workSvg.getBoundingClientRect();
+                    const viewBox = workSvg.viewBox.baseVal;
+
+                    // Преобразуем экранные координаты в SVG координаты
+                    const scaleX = viewBox.width / workRect.width;
+                    const scaleY = viewBox.height / workRect.height;
+                    const svgX = (e.clientX - workRect.left) * scaleX + viewBox.x;
+                    const svgY = (e.clientY - workRect.top) * scaleY + viewBox.y;
+
+                    // Учитываем трансформацию рабочей зоны (масштаб и панорамирование)
+                    const realX = (svgX / workZone.scale) - workZone.panX;
+                    const realY = (svgY / workZone.scale) - workZone.panY;
+
+                    // Вычисляем центр текущего полигона
+                    const centroid = currentPoints.reduce(
                         (acc, [x, y]) => [acc[0] + x, acc[1] + y],
                         [0, 0]
-                    ).map(sum => sum / originalPoints.length);
+                    ).map(sum => sum / currentPoints.length);
 
-                    const shiftX = 150 - centroid[0];
-                    const shiftY = 150 - centroid[1];
+                    // Смещаем полигон так, чтобы его центр был в точке курсора
+                    const shiftX = realX - centroid[0];
+                    const shiftY = realY - centroid[1];
 
-                    const shiftedPoints = originalPoints.map(([x, y]) => [
+                    const shiftedPoints = currentPoints.map(([x, y]) => [
                         x + shiftX,
                         y + shiftY
                     ]);
@@ -160,7 +231,8 @@ class BufferZone extends HTMLElement {
                     workZone.addPolygon(newPointsStr);
                     this.removePolygon(points);
                 } else {
-                    // Оставляем в текущей зоне с обновлёнными координатами
+                    // Обновляем originalPoints для следующего перемещения
+                    originalPoints = [...currentPoints];
                     const newPointsStr = currentPoints.map(p => p.join(',')).join(' ');
                     g.querySelector('polygon').setAttribute('points', newPointsStr);
                     g.querySelector('polygon').dataset.points = newPointsStr;
@@ -174,13 +246,21 @@ class BufferZone extends HTMLElement {
 
                 workZone.classList.remove('drag-over');
                 this.selectedPolygon = null;
-                originalPoints = currentPoints;
             }
         };
 
-
+        // Добавляем обработчики событий
+        g.addEventListener('mousedown', mouseDownHandler);
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
+
+        // Сохраняем ссылки на обработчики для последующего удаления
+        this.eventHandlers.set(points, {
+            mousemove: handleMouseMove,
+            mouseup: handleMouseUp,
+            mousedown: mouseDownHandler,
+            element: g
+        });
 
         // Альтернативный способ - двойной клик для копирования
         g.addEventListener('dblclick', () => {
@@ -190,6 +270,15 @@ class BufferZone extends HTMLElement {
     }
 
     removePolygon(points) {
+        // Удаляем обработчики событий
+        if (this.eventHandlers.has(points)) {
+            const handlers = this.eventHandlers.get(points);
+            document.removeEventListener('mousemove', handlers.mousemove);
+            document.removeEventListener('mouseup', handlers.mouseup);
+            handlers.element.removeEventListener('mousedown', handlers.mousedown);
+            this.eventHandlers.delete(points);
+        }
+
         // Удаляем из массива
         const index = this.polygons.indexOf(points);
         if (index > -1) {
@@ -222,4 +311,6 @@ class BufferZone extends HTMLElement {
     }
 }
 
-customElements.define('buffer-zone', BufferZone);
+if (!customElements.get('buffer-zone')) {
+    customElements.define('buffer-zone', BufferZone);
+}
