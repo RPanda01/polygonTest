@@ -1,0 +1,186 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.controls {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.controls button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#createBtn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+#createBtn:hover {
+  background-color: #45a049;
+}
+
+#saveBtn {
+  background-color: #2196F3;
+  color: white;
+}
+
+#saveBtn:hover {
+  background-color: #1976D2;
+}
+
+#resetBtn {
+  background-color: #f44336;
+  color: white;
+}
+
+#resetBtn:hover {
+  background-color: #d32f2f;
+}
+
+.zones {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.zone {
+  width: 100%;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+  position: relative;
+}
+
+
+.zone-header {
+  background-color: #f8f9fa;
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+.zone-content {
+  width: 100%;
+  position: relative;
+  max-height: 400px;
+}
+
+
+.buffer-zone .zone-header {
+  background-color: #e3f2fd;
+}
+
+.work-zone .zone-header {
+  background-color: #e8f5e8;
+}
+
+.buffer, .work {
+  border: 1px solid #ccc;
+  margin: 10px 0;
+  height: 300px;
+  overflow: auto;
+  position: relative;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  cursor: grab;
+}
+
+svg:active {
+  cursor: grabbing;
+}
+
+.polygon {
+  cursor: move;
+  transition: opacity 0.2s;
+}
+
+.polygon:hover {
+  opacity: 0.8;
+}
+
+.drag-over {
+  background-color: #f0f8ff;
+  border-color: #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.polygon-group {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.polygon-group:hover {
+  opacity: 0.8;
+}
+
+.buffer-zone .polygon-group {
+  cursor: grab;
+}
+
+.buffer-zone .polygon-group:active {
+  cursor: grabbing;
+}
+
+.work-zone .polygon-group {
+  cursor: grab;
+}
+
+.work-zone .polygon-group:active {
+  cursor: grabbing;
+}
+
+/* Стили для шкал измерений */
+.scale-x, .scale-y {
+  pointer-events: none;
+}
+
+.scale-x text, .scale-y text {
+  user-select: none;
+  pointer-events: none;
+}
+
+.scale-x line, .scale-y line {
+  pointer-events: none;
+}
+
+.scale-x rect, .scale-y rect {
+  pointer-events: none;
+}
+
+.instructions {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 5px;
+}
+
+.instructions h3 {
+  margin-top: 0;
+  color: #856404;
+}
+
+.instructions ul {
+  margin-bottom: 0;
+  color: #856404;
+}
